@@ -9,7 +9,6 @@ import traceback
 import datetime as dt
 from pathlib import Path
 from logger import Logger
-from jsonwrapper import AutoSaveDict
 from typing import (
     Optional,
     Callable,
@@ -24,53 +23,38 @@ from bot import (
     Row,
 )
 
+# configuration is now a Python module instead of a JSON file
+from config import config as cfg, TEMPLATE
 
-def config_app(path: Path) -> AutoSaveDict:
-    config = {
-        'client_id': '',
-        'client_secret': '',
-        'user_agent': '',
-        'username': '',
-        'password': '',
-        'sub_name': '',
-        'max_days': '',
-        'max_posts': '',
-        'sleep_minutes': '',
-    }
 
-    configuration: List[List[str]] = []
+# the old JSON-based interactive configuration helper has been removed.  the
+# values are now stored in ``config/config.py``.  ``cfg`` above is a simple
+# dict containing the settings; callers should treat numeric entries as
+# integers.
 
-    if not os.path.exists(path):
-        for key, _ in config.items():
-            config_name = ' '.join(key.split('_')).title()
-            user_inp = input(f"{config_name}: ")
-            configuration.append([key, user_inp])
-
-    for config_name, value in configuration:
-        config[config_name] = value
-
-    config_handler = AutoSaveDict(
-        path,
-        **config
-    )
-    return config_handler
 
 
 config_dir = Path(utils.BASE_DIR, 'config')
 config_dir.mkdir(parents=True, exist_ok=True)
-config_file = Path(config_dir, 'config.json')
-handler = config_app(config_file)
-handler.init()
+config_path = Path(config_dir, 'config.py')
+# ensure a configuration file exists - if not, write the template and exit so
+# the user can edit it.
+if not config_path.exists():
+    config_path.write_text(TEMPLATE)
+    print(f"Created new configuration template at {config_path!r}.\n"
+          "Please populate the values and restart the bot.")
+    sys.exit(0)
+
 posts = Posts('deleted_posts', config_dir)
 logger = Logger(1)
 untracked_flairs = (utils.Flair.SOLVED, utils.Flair.ABANDONED)
 posts.init()
 reddit = praw.Reddit(
-    client_id=handler['client_id'],
-    client_secret=handler['client_secret'],
-    user_agent=handler['user_agent'],
-    username=handler['username'],
-    password=handler['password'],
+    client_id=cfg['client_id'],
+    client_secret=cfg['client_secret'],
+    user_agent=cfg['user_agent'],
+    username=cfg['username'],
+    password=cfg['password'],
 )
 
 
@@ -123,7 +107,7 @@ def notify_if_error(func: Callable[..., int]) -> Callable[..., int]:
             msg = f"Error with '{bot_name}':\n\n{full_error}\n\nPlease report to author ({author})"
             send_modmail(
                 reddit,
-                handler['sub_name'],
+                cfg['sub_name'],
                 f'An error has occured with {utils.BOT_NAME} msg',
                 msg
             )
@@ -167,13 +151,13 @@ def main() -> int:
         posts_to_delete: Set[Row] = set()
         ignore_methods = ['Removed by mod',]
 
-        if utils.parse_cmd_line_args(sys.argv, logger, config_file, posts):
+        if utils.parse_cmd_line_args(sys.argv, logger, config_path, posts):
             return 0
 
         saved_submission_ids = {row.post_id for row in posts.fetch_all()}
-        max_posts = handler['max_posts']
+        max_posts = cfg.get('max_posts')
         limit = int(max_posts) if max_posts else None
-        sub_name = handler['sub_name']
+        sub_name = cfg['sub_name']
 
         for submission in reddit.subreddit(sub_name).new(limit=limit):
             try:
@@ -185,7 +169,7 @@ def main() -> int:
         for stored_post in posts.fetch_all():
             try:
                 submission = reddit.submission(id=stored_post.post_id)
-                max_days = int(handler['max_days'])
+                max_days = int(cfg['max_days'])
                 created = utils.string_to_dt(stored_post.record_created).date()
                 flair = utils.get_flair(submission.link_flair_text)
 
@@ -199,7 +183,7 @@ def main() -> int:
                     if method not in ignore_methods:
                         send_modmail(
                             reddit,
-                            handler['sub_name'],
+                            cfg['sub_name'],
                             "User's account has been deleted",
                             utils.modmail_removal_notification(stored_post, 'Account has been deleted')
                         )
@@ -213,7 +197,7 @@ def main() -> int:
                         msg = utils.modmail_removal_notification(stored_post, method)
                         send_modmail(
                             reddit,
-                            handler['sub_name'],
+                            cfg['sub_name'],
                             'A post has been deleted',
                             msg
                         )
@@ -237,7 +221,7 @@ def main() -> int:
         logger.info(f"Total posts deleted: {len(posts_to_delete)}")
 
         # wait before the next cycle
-        sleep_minutes = int(handler['sleep_minutes']) if handler['sleep_minutes'] else 5
+        sleep_minutes = int(cfg.get('sleep_minutes', 5))
         time.sleep(sleep_minutes * 60)
 
     # end of while True

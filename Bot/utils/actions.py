@@ -55,27 +55,37 @@ Ban Template;
 
 
 def parse_cmd_line_args(args: List[str], logger: Logger, config_file: Path, posts: Posts) -> bool:
+    """Parse a very small set of operations from ``sys.argv``.
+
+    ``config_file`` now refers to the Python configuration module path
+    (typically ``.../config/config.py``).  ``reset_config`` will overwrite the
+    file with the default template, which is imported from the configuration
+    module itself so that it does not need to be duplicated here.
+    """
     help_msg = """Command line help prompt
     Command: help
     Args: []
-    Decription: Prints the help prompt
+    Description: Prints the help prompt
 
     Command: reset_config
     Args: []
-    Decription: Reset the bot credentials
+    Description: Overwrite the Python configuration file with default values
 
     Command: reset_db
     Args: []
-    Decription: Reset the database
+    Description: Reset the database
 """
     if len(args) > 1:
         if args[1] == 'help':
             logger.info(help_msg)
         elif args[1] == 'reset_config':
+            # write the template text back to the configuration file.  import
+            # TEMPLATE lazily in case the module has not yet been created.
             try:
-                os.remove(config_file)
-            except FileNotFoundError:
-                logger.error("No configuration file found")
+                from config import TEMPLATE
+                config_file.write_text(TEMPLATE)
+            except Exception:
+                logger.error("Unable to reset configuration file")
         elif args[1] == 'reset_db':
             try:
                 os.remove(posts.path)
