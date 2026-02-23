@@ -1,0 +1,9 @@
+services:
+  app:
+    image: ghcr.io/slfhstd/deletedposts:latest
+    container_name: mch-deletedposts
+    restart: unless-stopped
+    volumes:
+      - /docker/data/deletedposts:/app/config
+
+      
