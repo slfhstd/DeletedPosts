@@ -1,0 +1,11 @@
+{
+    "client_id": "",
+    "client_secret": "",
+    "user_agent": "",
+    "username": "",
+    "password": "",
+    "sub_name": "",
+    "max_days": "180",
+    "max_posts": "180",
+    "sleep_minutes": "5"
+}
