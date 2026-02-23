@@ -54,13 +54,34 @@ Ban Template;
     You can read [our rules](https://reddit.com/r/MinecraftHelp/wiki/rules) to see if you're eligible to appeal this ban."""
 
 
+# default template used when resetting the configuration.  this mirrors
+# the template defined in ``config/config.py``; keeping a copy here avoids
+# depending on the module itself being importable (which can fail if the
+# directory is newly mounted or otherwise not part of sys.path).
+DEFAULT_TEMPLATE = """# configuration for DeletedPosts bot
+# edit the values of the dictionary below and restart the bot
+
+config = {
+    "client_id": "",
+    "client_secret": "",
+    "user_agent": "",
+    "username": "",
+    "password": "",
+    "sub_name": "",
+    # numeric settings are stored as integers here rather than strings
+    "max_days": 180,
+    "max_posts": 180,
+    "sleep_minutes": 5,
+}
+"""
+
 def parse_cmd_line_args(args: List[str], logger: Logger, config_file: Path, posts: Posts) -> bool:
     """Parse a very small set of operations from ``sys.argv``.
 
     ``config_file`` now refers to the Python configuration module path
     (typically ``.../config/config.py``).  ``reset_config`` will overwrite the
-    file with the default template, which is imported from the configuration
-    module itself so that it does not need to be duplicated here.
+    file with a default template; the template is defined above to avoid
+    importing the configuration module directly.
     """
     help_msg = """Command line help prompt
     Command: help
@@ -79,11 +100,9 @@ def parse_cmd_line_args(args: List[str], logger: Logger, config_file: Path, post
         if args[1] == 'help':
             logger.info(help_msg)
         elif args[1] == 'reset_config':
-            # write the template text back to the configuration file.  import
-            # TEMPLATE lazily in case the module has not yet been created.
+            # write the default template text back to the configuration file.
             try:
-                from config import TEMPLATE
-                config_file.write_text(TEMPLATE)
+                config_file.write_text(DEFAULT_TEMPLATE)
             except Exception:
                 logger.error("Unable to reset configuration file")
         elif args[1] == 'reset_db':

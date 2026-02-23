@@ -17,14 +17,39 @@ from typing import (
     Set,
     Any,
 )
+
+import importlib
+import importlib.util
 from bot import (
     Datatype,
     Posts,
     Row,
 )
 
-# configuration is now a Python module instead of a JSON file
-from config import config as cfg, TEMPLATE
+# configuration will be loaded later once we have ensured the package is
+# in place.  this avoids import errors when the ``config`` directory is
+# provided via a volume mount that is initially empty.
+
+cfg = None  # type: ignore
+TEMPLATE = None  # type: ignore
+
+# fallback template used when the config module cannot yet be imported
+DEFAULT_TEMPLATE = """# configuration for DeletedPosts bot
+# edit the values of the dictionary below and restart the bot
+
+config = {
+    "client_id": "",
+    "client_secret": "",
+    "user_agent": "",
+    "username": "",
+    "password": "",
+    "sub_name": "",
+    # numeric settings are stored as integers here rather than strings
+    "max_days": 180,
+    "max_posts": 180,
+    "sleep_minutes": 5,
+}
+"""
 
 
 # the old JSON-based interactive configuration helper has been removed.  the
@@ -36,14 +61,34 @@ from config import config as cfg, TEMPLATE
 
 config_dir = Path(utils.BASE_DIR, 'config')
 config_dir.mkdir(parents=True, exist_ok=True)
-config_path = Path(config_dir, 'config.py')
-# ensure a configuration file exists - if not, write the template and exit so
-# the user can edit it.
+# make config a package so it can be imported later; if __init__.py is missing
+# (for example a freshly mounted empty volume), create a minimal one.
+init_file = config_dir / "__init__.py"
+if not init_file.exists():
+    init_file.write_text("# config package\n")
+
+config_path = config_dir / 'config.py'
+# if the config file itself is missing, write the template and exit. we need to
+# import the template name from the module, but since the file was just created
+# we'll import once below after ensuring the package exists.
 if not config_path.exists():
-    config_path.write_text(TEMPLATE)
+    # write fallback template if we haven't yet imported the module
+    fallback = TEMPLATE or DEFAULT_TEMPLATE
+    config_path.write_text(fallback)
     print(f"Created new configuration template at {config_path!r}.\n"
           "Please populate the values and restart the bot.")
     sys.exit(0)
+
+# now that the package structure exists and config file is present, import it
+import importlib
+spec = importlib.util.spec_from_file_location("config", str(config_path))
+config_mod = importlib.util.module_from_spec(spec)
+# insert into sys.modules so conventional imports work
+sys.modules["config"] = config_mod
+if spec.loader:
+    spec.loader.exec_module(config_mod)  # type: ignore
+cfg = config_mod.config
+TEMPLATE = config_mod.TEMPLATE
 
 posts = Posts('deleted_posts', config_dir)
 logger = Logger(1)

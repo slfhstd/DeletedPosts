@@ -4,7 +4,9 @@ WORKDIR /app
 
 # Copy application files
 COPY Bot ./Bot
+COPY config ./config
 
+# prepare configuration directory (volume may later overwrite it)
 RUN mkdir -p /app/config
 
 # Install dependencies
