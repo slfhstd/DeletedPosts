@@ -8,6 +8,6 @@ __all__ = (
 )
 
 
-BOT_NAME = 'CraftSleuthBot'
+BOT_NAME = 'DeletedPostsBot'
 BASE_DIR = Path(__file__).parent.parent.parent
 MSG_AWAIT_THRESHOLD = 5

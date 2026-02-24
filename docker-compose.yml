@@ -5,5 +5,13 @@ services:
     restart: unless-stopped
     volumes:
       - /docker/data/deletedposts:/app/config
-
-      
+    environment:
+      CLIENT_ID: "abc123"
+      CLIENT_SECRET: "secret"
+      USER_AGENT: "DeletedPostsBot/1.0"
+      USERNAME: "botuser"
+      PASSWORD: "botpass"
+      SUB_NAME: "my_subreddit"
+      MAX_DAYS: "90"            # strings are converted to ints when the
+      MAX_POSTS: "500"          # corresponding config value is an int
+      SLEEP_MINUTES: "10"

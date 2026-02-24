@@ -3,7 +3,7 @@ Configuration for the DeletedPosts bot.
 
 This module exposes a single dictionary called ``config`` which holds all
 of the parameters required to connect to Reddit and control the behaviour of
-the bot.  When you first run the program the file will be created for you
+ the bot.  When you first run the program the file will be created for you
 with empty values; you should edit it before starting the bot.  You can also
 reset the file to defaults by running the application with the
 ``reset_config`` command-line argument.
@@ -12,8 +12,9 @@ Example usage::
 
     from config import config
     print(config['client_id'])
-
 """
+
+import os
 
 config = {
     "client_id": "",
@@ -27,6 +28,26 @@ config = {
     "max_posts": 180,
     "sleep_minutes": 5,
 }
+
+# allow container/WC users to override values via environment variables
+# variables are expected to be UPPERCASE versions of the keys (or prefixed
+# with DP_).  Numeric values will be converted to ints automatically.
+for key in list(config):
+    # check both bare and prefixed variants
+    env_names = [key.upper(), f"DP_{key.upper()}"]
+    for env in env_names:
+        val = os.getenv(env)
+        if val is not None:
+            # cast numeric entries back to int when appropriate
+            if isinstance(config[key], int):
+                try:
+                    config[key] = int(val)
+                except ValueError:
+                    pass  # leave original if conversion fails
+            else:
+                config[key] = val
+            break
+
 
 # same data as a text template.  both ``main.py`` and ``utils.actions`` import
 # this so that the file can be created or reset without duplicating the
