@@ -88,7 +88,8 @@ sys.modules["config"] = config_mod
 if spec.loader:
     spec.loader.exec_module(config_mod)  # type: ignore
 cfg = config_mod.config
-TEMPLATE = config_mod.TEMPLATE
+# older config files may not define TEMPLATE (previous bug); fall back
+TEMPLATE = getattr(config_mod, 'TEMPLATE', DEFAULT_TEMPLATE)
 
 posts = Posts('deleted_posts', config_dir)
 logger = Logger(1)
