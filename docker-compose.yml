@@ -6,12 +6,12 @@ services:
     volumes:
       - /docker/data/deletedposts:/app/config
     environment:
-      CLIENT_ID: "abc123"
-      CLIENT_SECRET: "secret"
-      USER_AGENT: "DeletedPostsBot/1.0"
-      USERNAME: "botuser"
-      PASSWORD: "botpass"
-      SUB_NAME: "my_subreddit"
-      MAX_DAYS: "90"            # strings are converted to ints when the
-      MAX_POSTS: "500"          # corresponding config value is an int
-      SLEEP_MINUTES: "10"
+      CLIENT_ID: "${CLIENT_ID}"
+      CLIENT_SECRET: "${CLIENT_SECRET}"
+      USER_AGENT: "${USER_AGENT}"
+      USERNAME: "${USERNAME}"
+      PASSWORD: "${PASSWORD}"
+      SUB_NAME: "${SUB_NAME}"
+      MAX_DAYS: "${MAX_DAYS}"            # strings are converted to ints when the
+      MAX_POSTS: "${MAX_POSTS}"          # corresponding config value is an int
+      SLEEP_MINUTES: "${SLEEP_MINUTES}"  
