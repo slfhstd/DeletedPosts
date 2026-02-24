@@ -191,6 +191,10 @@ def check_submission(submission: praw.reddit.Submission, saved_submission_ids: S
 
 @notify_if_error
 def main() -> int:
+    # announce startup and interval
+    sleep_minutes = int(cfg.get('sleep_minutes', 5))
+    logger.info(f"{utils.BOT_NAME} starting; will sleep {sleep_minutes} minutes between cycles")
+
     # run indefinitely, sleeping between iterations
     while True:
         posts_to_delete: Set[Row] = set()
@@ -267,6 +271,7 @@ def main() -> int:
 
         # wait before the next cycle
         sleep_minutes = int(cfg.get('sleep_minutes', 5))
+        logger.info(f"Sleeping for {sleep_minutes} minutes...")
         time.sleep(sleep_minutes * 60)
 
     # end of while True
