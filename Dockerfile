@@ -4,6 +4,7 @@ WORKDIR /app
 
 # Copy application files
 COPY Bot ./Bot
+COPY populate_config.py .
 COPY config ./config
 
 # prepare configuration directory (volume may later overwrite it)
