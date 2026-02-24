@@ -14,5 +14,5 @@ RUN pip install --no-cache-dir praw
 
 ENV PYTHONUNBUFFERED=1
 
-# Run the script
-CMD ["python", "Bot/main.py"]
+# Always generate config.py from environment before starting
+CMD ["/bin/sh", "-c", "python populate_config.py && python Bot/main.py"]
